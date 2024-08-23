@@ -70,7 +70,6 @@ async def main(times: int, package_pre_times: int, interval: int, url: str, meth
         times -= 1
     await asyncio.gather(*all_tasks)
 
-
 url = 'http://web-lb-1888488606.us-east-2.elb.amazonaws.com'
 method = 'get'
 timeout = 30
@@ -79,4 +78,5 @@ times = -1
 package_pre_times = 16
 interval = 2
 
-asyncio.run(main(times, package_pre_times, interval, url, method, timeout))
+if __name__ == '__main':
+    asyncio.run(main(times, package_pre_times, interval, url, method, timeout))
