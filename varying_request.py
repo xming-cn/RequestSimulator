@@ -14,20 +14,27 @@ timeout = 30
 
 with open('varying_rule.csv', newline='') as csvfile:
     spamreader = csv.reader(csvfile)
-    next(spamreader)
-    
-    for i, row in enumerate(spamreader):
-        times, package_pre_times, interval = row
-        times = int(times)
-        package_pre_times = int(package_pre_times)
-        interval = float(interval)
-        if package_pre_times > 0:
-            print(f'[cyan]▶ 开始运行阶段 {i+1}[/cyan] [gray]在接下来 {interval * times} 秒内, 每 {interval} 秒将发送 {package_pre_times} 次请求[/gray]')
-            asyncio.run(request_simulator.main(
-                times, package_pre_times, interval, url, method, timeout
-            ))
-        else:
-            sleep_time = int(interval * times)
-            print(f'[cyan]▶ 开始运行阶段 {i+1}:[/cyan] [gray]休息 {sleep_time} 秒![/gray]')
-            for i in track(range(sleep_time), description="休息中..."):
-                time.sleep(1)
+    varying_rule = list(spamreader)[1:]
+
+for i, row in enumerate(varying_rule):
+    duration,interval,package_pre_times = row
+    duration = int(duration)
+    package_pre_times = int(package_pre_times)
+    interval = float(interval)
+
+    if package_pre_times > 0:
+        times = duration // interval
+        duration = times * interval
+        print()
+        print(f'[cyan]▶ 开始运行阶段 {i+1}[/cyan]')
+        print(f'[gray]  在接下来 {duration} 秒内, 每 {interval} 秒将发送 {package_pre_times} 次请求[/gray]')
+        print()
+        asyncio.run(request_simulator.main(
+            times, package_pre_times, interval, url, method, timeout
+        ))
+    else:
+        print()
+        print(f'[cyan]▶ 开始运行阶段 {i+1}:[/cyan] [gray]休息 {duration} 秒![/gray]')
+        for i in track(range(duration), description="休息中..."):
+            time.sleep(1)
+        print()
