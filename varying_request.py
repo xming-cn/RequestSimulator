@@ -17,10 +17,7 @@ with open('varying_rule.csv', newline='') as csvfile:
     varying_rule = list(spamreader)[1:]
 
 for i, row in enumerate(varying_rule):
-    duration,interval,package_pre_times = row
-    duration = int(duration)
-    package_pre_times = int(package_pre_times)
-    interval = float(interval)
+    duration, interval, package_pre_times = int(row[0]), float(row[1]), int(row[2])
 
     if package_pre_times > 0:
         times = duration // interval
