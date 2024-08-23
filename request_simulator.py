@@ -77,6 +77,6 @@ timeout = 30
 
 times = -1
 package_pre_times = 16
-interval = 0.4
+interval = 2
 
 asyncio.run(main(times, package_pre_times, interval, url, method, timeout))
