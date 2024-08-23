@@ -12,7 +12,7 @@ url = 'http://web-lb-1888488606.us-east-2.elb.amazonaws.com'
 method = 'get'
 timeout = 30
 
-with open('requests.csv', newline='') as csvfile:
+with open('varying_rule.csv', newline='') as csvfile:
     spamreader = csv.reader(csvfile)
     next(spamreader)
     
