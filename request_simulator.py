@@ -64,16 +64,18 @@ async def send_calc_package(url: str, method: str, timeout: int=8):
     start = time.time()
     response = await send_package(calc_url, method, timeout)
     spend_time = round((time.time() - start) * 100) / 100
+
     if isinstance(response, SendPackageResult):
-        print(f'[red]  {response} in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow]')
+        output = f'[red]{response.name} in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow]'
     elif response_correct(response):
-        print(f'[green]  CORRECT in {spend_time:>5.2f}s[/green] [yellow]{suffix}[/yellow] [gray]{response.text[:20]}....[/gray]')
-    elif hasattr(response, "reason"):
-        print(f'[red]INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow] [gray]{response.status_code} {response.reason}[/gray]')
-    elif hasattr(response, "text"):
-        print(f'[red]INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow] [gray]{response.status_code} {response.text}[/gray]')
+        output = f'[green]  CORRECT in {spend_time:>5.2f}s[/green] [yellow]{suffix}[/yellow] [gray]200 {response.text[:20]}....[/gray]'
     else:
-        print(f'[red]INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow] [gray]{response.status_code}[/gray]')
+        output = f'[red]INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow] [gray]{response.status_code} {response.text}[/gray]'
+    
+    if hasattr(response, "reason"):
+        output += f' [gray]{response.reason}[/gray]'
+    
+    print(output)
 
 async def main(times: int, package_pre_times: int, interval: int, url: str, method: str, timeout: int=8):
     all_tasks = []
