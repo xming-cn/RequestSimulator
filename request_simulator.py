@@ -1,5 +1,6 @@
 import re
 import time
+import base64
 import random
 import asyncio
 from enum import Enum, auto
@@ -14,8 +15,10 @@ client = httpx.AsyncClient()
 
 class SendPackageResult(Enum):
     TIMEOUT = auto()
-    POOL_TIMEOUT = auto()
-
+    TRANSPORT_ERROR = auto()
+    REQUEST_ERROR = auto()
+    HTTP_ERROR = auto()
+    UNKNOWN_ERROR = auto()
 
 LOOKS_CORRECT_PARRERN = re.compile('ey[0-9A-Za-z]{230,280}')
 def looks_correct(text: str):
@@ -27,38 +30,50 @@ def response_correct(response: httpx.Response):
     return True
 
 def random_token():
-    return str(random.randint(1000000, 9999999))
+    plain_text = f'ICanHazUnicorn4-ws-ec2?-{random.randint(1, 10000)}'
+    sample_string_bytes = plain_text.encode("ascii")
+    base64_bytes = base64.b64encode(sample_string_bytes)
+    base64_string = base64_bytes.decode("ascii")
+    return base64_string
 
 async def send_package(url: str, method: str, timeout: int=8):
     method = method.lower()
     method_callable = getattr(client, method)
     try:
         return await method_callable(url, timeout=timeout)
-    except httpx.ReadTimeout:
+    except httpx.TimeoutException:
         return SendPackageResult.TIMEOUT
-    except httpx.PoolTimeout:
-        return SendPackageResult.POOL_TIMEOUT
+    except httpx.TransportError:
+        return SendPackageResult.TRANSPORT_ERROR
+    except httpx.RequestError:
+        return SendPackageResult.REQUEST_ERROR
+    except httpx.HTTPError:
+        return SendPackageResult.HTTP_ERROR
+    except Exception:
+        return SendPackageResult.UNKNOWN_ERROR
+
 
 def generate_calc_url(base_url: str):
-    return base_url + ('' if base_url.endswith('/') else '/') + 'calc?' + random_token()
+    suffix = f'calc?input={random_token()}'
+    return base_url + ('' if base_url.endswith('/') else '/') + suffix, '/' + suffix
 
 HIDE_START = True
 async def send_calc_package(url: str, method: str, timeout: int=8):
-    calc_url = generate_calc_url(url)
+    calc_url, suffix = generate_calc_url(url)
     if not HIDE_START: print(f'[dark_gray]start send to {calc_url}[/dark_gray]')
     start = time.time()
     response = await send_package(calc_url, method, timeout)
     spend_time = round((time.time() - start) * 100) / 100
-    if response is SendPackageResult.TIMEOUT:
-        print(f'[red]  TIMEOUT in {spend_time:>5.2f}s[/red] [yellow]{calc_url}[/yellow]')
-    if response is SendPackageResult.POOL_TIMEOUT:
-        print(f'[red] PTIMEOUT in {spend_time:>5.2f}s[/red] [yellow]{calc_url}[/yellow]')
+    if isinstance(response, SendPackageResult):
+        print(f'[red]  {response} in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow]')
     elif response_correct(response):
-        print(f'[green]  CORRECT in {spend_time:>5.2f}s[/green] [yellow]{calc_url}[/yellow] [gray]{response.text[:20]}....[/gray]')
+        print(f'[green]  CORRECT in {spend_time:>5.2f}s[/green] [yellow]{suffix}[/yellow] [gray]{response.text[:20]}....[/gray]')
     elif hasattr(response, "reason"):
-        print(f'[red]INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{calc_url}[/yellow] [gray]{response.status_code} {response.reason}[/gray]')
+        print(f'[red]INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow] [gray]{response.status_code} {response.reason}[/gray]')
+    elif hasattr(response, "text"):
+        print(f'[red]INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow] [gray]{response.status_code} {response.text}[/gray]')
     else:
-        print(f'[red]INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{calc_url}[/yellow] [gray]{response.status_code}[/gray]')
+        print(f'[red]INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow] [gray]{response.status_code}[/gray]')
 
 async def main(times: int, package_pre_times: int, interval: int, url: str, method: str, timeout: int=8):
     all_tasks = []
@@ -70,13 +85,13 @@ async def main(times: int, package_pre_times: int, interval: int, url: str, meth
         times -= 1
     await asyncio.gather(*all_tasks)
 
-url = 'http://web-lb-1888488606.us-east-2.elb.amazonaws.com'
+url = 'http://gameday-lb-171313428.us-east-2.elb.amazonaws.com'
 method = 'get'
-timeout = 30
+timeout = 8
 
 times = -1
-package_pre_times = 16
+package_pre_times = 1
 interval = 2
 
-if __name__ == '__main':
+if __name__ == '__main__':
     asyncio.run(main(times, package_pre_times, interval, url, method, timeout))
