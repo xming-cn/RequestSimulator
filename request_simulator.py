@@ -66,11 +66,11 @@ async def send_calc_package(url: str, method: str, timeout: int=8):
     spend_time = round((time.time() - start) * 100) / 100
 
     if isinstance(response, SendPackageResult):
-        output = f'[red]{response.name} in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow]'
+        output = f'[red]{response.name:>15} in {spend_time:>5.2f}s[/red] [yellow]{suffix:<55}[/yellow]'
     elif response_correct(response):
-        output = f'[green]  CORRECT in {spend_time:>5.2f}s[/green] [yellow]{suffix}[/yellow] [gray]200 {response.text[:20]}....[/gray]'
+        output = f'[green]        CORRECT in {spend_time:>5.2f}s[/green] [yellow]{suffix:<55}[/yellow] [gray]200 {response.text[:20]}...[/gray]'
     else:
-        output = f'[red]INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{suffix}[/yellow] [gray]{response.status_code} {response.text}[/gray]'
+        output = f'[red]      INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{suffix:<55}[/yellow] [gray]{response.status_code} {response.text}[/gray]'
     
     if hasattr(response, "reason"):
         output += f' [gray]{response.reason}[/gray]'
