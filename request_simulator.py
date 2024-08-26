@@ -3,6 +3,7 @@ import time
 import base64
 import random
 import asyncio
+from typing import Union
 from enum import Enum, auto
 
 from rich import console
@@ -20,23 +21,24 @@ class SendPackageResult(Enum):
     HTTP_ERROR = auto()
     UNKNOWN_ERROR = auto()
 
+
 LOOKS_CORRECT_PARRERN = re.compile('ey[0-9A-Za-z]{230,280}')
-def looks_correct(text: str):
+def looks_correct(text: str) -> bool:
     return re.fullmatch(LOOKS_CORRECT_PARRERN, text)
 
-def response_correct(response: httpx.Response):
+def response_correct(response: httpx.Response) -> bool:
     if response.status_code != 200: return False
     if not looks_correct(response.text): return False
     return True
 
-def random_token():
+def random_token() -> str:
     plain_text = f'ICanHazUnicorn4-ws-ec2?-{random.randint(1, 10000)}'
     sample_string_bytes = plain_text.encode("ascii")
     base64_bytes = base64.b64encode(sample_string_bytes)
     base64_string = base64_bytes.decode("ascii")
     return base64_string
 
-async def send_package(url: str, method: str, timeout: int=8):
+async def send_package(url: str, method: str, timeout: int=8) -> Union[httpx.Response, SendPackageResult]:
     method = method.lower()
     method_callable = getattr(client, method)
     try:
@@ -52,8 +54,7 @@ async def send_package(url: str, method: str, timeout: int=8):
     except Exception:
         return SendPackageResult.UNKNOWN_ERROR
 
-
-def generate_calc_url(base_url: str):
+def generate_calc_url(base_url: str) -> str:
     suffix = f'calc?input={random_token()}'
     return base_url + ('' if base_url.endswith('/') else '/') + suffix, '/' + suffix
 
@@ -87,13 +88,13 @@ async def main(times: int, package_pre_times: int, interval: int, url: str, meth
         times -= 1
     await asyncio.gather(*all_tasks)
 
-url = 'http://gameday-lb-171313428.us-east-2.elb.amazonaws.com'
+url = 'http://gameday-lb-1767989319.us-east-2.elb.amazonaws.com/'
 method = 'get'
 timeout = 8
 
 times = -1
 package_pre_times = 1
-interval = 2
+interval = 1.2
 
 if __name__ == '__main__':
     asyncio.run(main(times, package_pre_times, interval, url, method, timeout))
