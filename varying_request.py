@@ -20,7 +20,7 @@ for i, row in enumerate(varying_rule):
     duration, interval, package_pre_times = int(row[0]), float(row[1]), int(row[2])
 
     if package_pre_times > 0:
-        times = duration // interval
+        times = int(duration // interval)
         duration = times * interval
         print()
         print(f'[cyan]▶ 开始运行阶段 {i+1}[/cyan]')

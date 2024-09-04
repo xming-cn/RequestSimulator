@@ -3,7 +3,7 @@ import time
 import base64
 import random
 import asyncio
-from typing import Union
+from typing import Union, cast
 from enum import Enum, auto
 
 from rich import console
@@ -24,7 +24,7 @@ class SendPackageResult(Enum):
 
 LOOKS_CORRECT_PARRERN = re.compile('ey[0-9A-Za-z]{230,280}')
 def looks_correct(text: str) -> bool:
-    return re.fullmatch(LOOKS_CORRECT_PARRERN, text)
+    return bool(re.fullmatch(LOOKS_CORRECT_PARRERN, text))
 
 def response_correct(response: httpx.Response) -> bool:
     if response.status_code != 200: return False
@@ -54,7 +54,7 @@ async def send_package(url: str, method: str, timeout: int=8) -> Union[httpx.Res
     except Exception:
         return SendPackageResult.UNKNOWN_ERROR
 
-def generate_calc_url(base_url: str) -> str:
+def generate_calc_url(base_url: str) -> tuple[str, str]:
     suffix = f'calc?input={random_token()}'
     return base_url + ('' if base_url.endswith('/') else '/') + suffix, '/' + suffix
 
@@ -74,11 +74,11 @@ async def send_calc_package(url: str, method: str, timeout: int=8):
         output = f'[red]      INCORRECT in {spend_time:>5.2f}s[/red] [yellow]{suffix:<55}[/yellow] [gray]{response.status_code} {response.text}[/gray]'
     
     if hasattr(response, "reason"):
-        output += f' [gray]{response.reason}[/gray]'
+        output += f' [gray]{response.reason}[/gray]' # type: ignore
     
     print(output)
 
-async def main(times: int, package_pre_times: int, interval: int, url: str, method: str, timeout: int=8):
+async def main(times: int, package_pre_times: int, interval: float, url: str, method: str, timeout: int=8):
     all_tasks = []
     while times != 0:
         for _ in range(package_pre_times):
